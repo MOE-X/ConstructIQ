@@ -9,6 +9,10 @@ router.get('/', isAuth, homeController.load)
 
 router.get('/project/:projectId', isAuth, homeController.getData)
 
-router.post('/project/:projectId', isAuth, validation.bodyValidation(), validation.createPaymentValidation(), homeController.addData)
+router.post('/project/:projectId/attendances', isAuth, validation.bodyValidation(), validation.createAttendancesValidation(), homeController.addData)
+
+router.post('/project/:projectId/payments', isAuth, validation.bodyValidation(), validation.createPaymentsValidation(), homeController.addData)
+
+// router.post('/project/:projectId/attendances', isAuth, validation.bodyValidation(), validation.createExpensesValidation(), homeController.addData)
 
 module.exports = router

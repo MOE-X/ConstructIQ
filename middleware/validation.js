@@ -145,7 +145,7 @@ exports.updateWorkerValidation = () => {
 }
 
 //Home
-exports.createAttendanceValidation = () => {
+exports.createAttendancesValidation = () => {
     let isWorking
     return [
         body('attendances')
@@ -195,7 +195,7 @@ exports.createAttendanceValidation = () => {
     ]
 }
 
-exports.createPaymentValidation = () => {
+exports.createPaymentsValidation = () => {
     return [
         body('payments')
             .isArray({ min: 1, max: 1 })

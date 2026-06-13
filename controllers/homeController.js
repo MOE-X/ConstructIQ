@@ -382,123 +382,126 @@ exports.addData = async (req, res, next) => {
     if (!project) {
         return _404(req, res, next, 'Project not found')
     }
-    const { action } = req.query
-    //Checking attendance eligibility
-    if (action === 'checkAttendance') {
-        //checking for the project status 
-        if (project.pStatusId === 3) {
-            return res.status(422).json({
-                response: {
-                    success: false,
-                    msg: 'Cannot add attendance for a completed project'
-                }
-            })
-        } else if (project.pStatusId === 1) {
-            return res.status(422).json({
-                response: {
-                    success: false,
-                    msg: 'Cannot add attendance for a pending project'
-                }
-            })
-        }
-        //checking eligibilioty of the desired date
-
-        const { date } = req.body
-        const attendanceDate = new Date(date)
-        const projectDate = new Date(project.startingDate)
-        if (attendanceDate < projectDate) {
-            return res.status(422).json({
-                response: {
-                    success: false,
-                    msg: 'The chosen date is out of the projects\' starting date\'s range '
-                }
-            })
-        }
-        const workers = await Worker.findAll({
-            attributes: ['workerId', 'fullName'],
-            include: [
-                {
-                    model: WRole,
-                    attributes: ['role']
-                }
-            ]
-        })
-
-        return res.status(200).json({
-            response: {
-                success: true,
-                msg: 'Entered date meets the requirements',
-                workers: workers
+    const url = req.url
+    if (url.includes('attendances')) {
+        const { action } = req.query
+        //Checking attendance eligibility
+        if (action === 'checkAttendance') {
+            //checking for the project status 
+            if (project.pStatusId === 3) {
+                return res.status(422).json({
+                    response: {
+                        success: false,
+                        msg: 'Cannot add attendance for a completed project'
+                    }
+                })
+            } else if (project.pStatusId === 1) {
+                return res.status(422).json({
+                    response: {
+                        success: false,
+                        msg: 'Cannot add attendance for a pending project'
+                    }
+                })
             }
-        })
-    }
-    else if (action === 'addAttendances') {
-        //Data validation
-        const attendances = req.body.attendances
-        const errors = validateCreateAttendances(attendances)
-        if (errors.length !== 0) {
-            return res.status(422).json({
+            //checking eligibilioty of the desired date
+    
+            const { date } = req.body
+            const attendanceDate = new Date(date)
+            const projectDate = new Date(project.startingDate)
+            if (attendanceDate < projectDate) {
+                return res.status(422).json({
+                    response: {
+                        success: false,
+                        msg: 'The chosen date is out of the projects\' starting date\'s range '
+                    }
+                })
+            }
+            const workers = await Worker.findAll({
+                attributes: ['workerId', 'fullName'],
+                include: [
+                    {
+                        model: WRole,
+                        attributes: ['role']
+                    }
+                ]
+            })
+    
+            return res.status(200).json({
                 response: {
-                    success: false,
-                    error: errors
+                    success: true,
+                    msg: 'Entered date meets the requirements',
+                    workers: workers
                 }
             })
         }
-        //Checking for and false isWorking fields and changing their corresponding dayRate field, also adding the projectId to each attendance
-        attendances.forEach((attendance, index) => {
-            //if we dont want to warn about the isWorking error
-            // if (!attendance.isWorking) {
-            //     attendance.dayRate = 0
-            // }
-            attendances[index] = {
-                projectId: projectId,
-                ...attendance
+        else if (action === 'addAttendances') {
+            //Data validation
+            const attendances = req.body.attendances
+            const errors = validateCreateAttendances(attendances)
+            if (errors.length !== 0) {
+                return res.status(422).json({
+                    response: {
+                        success: false,
+                        error: errors
+                    }
+                })
             }
-        })
-        // Creating the attendances
-        Attendance.bulkCreate(attendances)
-            .then(attendances => {
-                if (!attendances) {
-                    return res.status(500).json({
+            //Checking for and false isWorking fields and changing their corresponding dayRate field, also adding the projectId to each attendance
+            attendances.forEach((attendance, index) => {
+                //if we dont want to warn about the isWorking error
+                // if (!attendance.isWorking) {
+                //     attendance.dayRate = 0
+                // }
+                attendances[index] = {
+                    projectId: projectId,
+                    ...attendance
+                }
+            })
+            // Creating the attendances
+            Attendance.bulkCreate(attendances)
+                .then(attendances => {
+                    if (!attendances) {
+                        return res.status(500).json({
+                            response: {
+                                success: false,
+                                msg: 'Something went wrong'
+                            }
+                        })
+                    }
+                    attendances.forEach(async attendance => {
+                        const worker = await Worker.findOne({ where: { workerId: attendance.workerId } })
+                        const accounts = await worker.getAccounts({ where: { projectId: projectId } })
+                        const account = accounts[0]
+                        if (!account) {
+                            await worker.createAccount({
+                                projectId: projectId,
+                                // workerId: attendance.workerId,
+                                account: attendance.dayRate
+                            })
+                            console.log(`Account created for ${worker.fullName}`);
+                            return
+                        }
+                        if (!attendance.isWorking) {
+                            return
+                        }
+                        account.account += attendance.dayRate
+                        await account.save()
+                        console.log(`Account updated for ${worker.fullName}`)
+                    })
+                    return res.status(200).json({
                         response: {
-                            success: false,
-                            msg: 'Something went wrong'
+                            success: true,
+                            msg: 'Attendances created',
+                            attendances: attendances
                         }
                     })
-                }
-                attendances.forEach(async attendance => {
-                    const worker = await Worker.findOne({ where: { workerId: attendance.workerId } })
-                    const accounts = await worker.getAccounts({ where: { projectId: projectId } })
-                    const account = accounts[0]
-                    if (!account) {
-                        await worker.createAccount({
-                            projectId: projectId,
-                            // workerId: attendance.workerId,
-                            account: attendance.dayRate
-                        })
-                        console.log(`Account created for ${worker.fullName}`);
-                        return
-                    }
-                    if (!attendance.isWorking) {
-                        return
-                    }
-                    account.account += attendance.dayRate
-                    await account.save()
-                    console.log(`Account updated for ${worker.fullName}`)
                 })
-                return res.status(200).json({
-                    response: {
-                        success: true,
-                        msg: 'Attendances created',
-                        attendances: attendances
-                    }
+                .catch(err => {
+                    console.error('Error: ', err)
                 })
-            })
-            .catch(err => {
-                console.error('Error: ', err)
-            })
+        }
     }
-    else if (action === 'addPayments') {
+    else if (url.includes('payments')) {
         //Data validation
         const payments = req.body.payments
         const errors = validateCreatePayments(payments)
@@ -582,7 +585,7 @@ exports.addData = async (req, res, next) => {
                 console.error('Error: ', err)
             })
     }
-    else if (action === 'addExpenses') {
+    else if (url.includes('expenses')) {
         //Data validation
         const expenses = req.body.expenses
         const errors = validateCreateExpenses(expenses)
