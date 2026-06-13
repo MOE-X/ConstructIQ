@@ -1,0 +1,29 @@
+{
+  "name": "construction",
+  "version": "1.0.0",
+  "description": "A construction project",
+  "license": "ISC",
+  "author": "Mohammad Smiley",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "body-parser": "^2.2.2",
+    "bootstrap": "^5.3.8",
+    "connect-session-sequelize": "^8.0.6",
+    "ejs": "^5.0.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.2",
+    "mysql2": "^3.22.1",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "sequelize-cli": "^6.6.5"
+  }
+}
