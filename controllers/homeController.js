@@ -372,8 +372,7 @@ exports.addData = async (req, res, next) => {
                 error: {
                     field: errors.array()[0].path ? `${field} on row ${+errors.array()[0].path.slice(+errors.array()[0].path.indexOf('[') + 1, errors.array()[0].path.indexOf(']')) + 1 || 0}` : 'body',
                     msg: errors.array()[0].msg
-                },
-                errors: errors
+                }
             }
         })
     }
@@ -437,15 +436,6 @@ exports.addData = async (req, res, next) => {
         else if (action === 'addAttendances') {
             //Data validation
             const attendances = req.body.attendances
-            const errors = validateCreateAttendances(attendances)
-            if (errors.length !== 0) {
-                return res.status(422).json({
-                    response: {
-                        success: false,
-                        error: errors
-                    }
-                })
-            }
             //Checking for and false isWorking fields and changing their corresponding dayRate field, also adding the projectId to each attendance
             attendances.forEach((attendance, index) => {
                 //if we dont want to warn about the isWorking error
@@ -502,17 +492,7 @@ exports.addData = async (req, res, next) => {
         }
     }
     else if (url.includes('payments')) {
-        //Data validation
         const payments = req.body.payments
-        const errors = validateCreatePayments(payments)
-        if (errors.length !== 0) {
-            return res.status(422).json({
-                response: {
-                    success: false,
-                    error: errors
-                }
-            })
-        }
         // adding the projectId and the paymentDate to each payment, and checking if any worker has insufficient balance
         let canDeduct = true
         let workerName
@@ -526,8 +506,6 @@ exports.addData = async (req, res, next) => {
             const worker = await Worker.findOne({ where: { workerId: payment.workerId } })
             const accounts = await worker.getAccounts({ where: { projectId: projectId } })
             const account = accounts[0]
-            // console.log('The account:::::: ', account)
-            console.log('The payment:::::: ', canDeduct)
             if (payment.paymentAmount > account.account) {
                 canDeduct = false
                 workerName = worker.fullName

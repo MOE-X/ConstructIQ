@@ -203,16 +203,17 @@ exports.createPaymentsValidation = () => {
         body('payments.*.workerId')
             .isInt({ min: 1 })
             .withMessage('workerId field must be a positive integer'),
-        body('payments.*.paymentDate')
-            .isDate()
-            .withMessage('Invalid date'),
+        // body('payments.*.paymentDate')
+        //     .isDate()
+        //     .withMessage('Invalid date'),
         body('payments.*.paymentAmount')
             .isNumeric()
-            .withMessage('paymentAmount should be a number')
-            .custom((value, { req }) => {
-                if (value < 0) {
-                    throw new Error('paymentAmount field must be positive')
+            .withMessage('paymentAmount should be a number greater than 0')
+            .custom((value, {req}) => {
+                if (value <= 0) {
+                    throw new Error('paymentAmount should be more than 0')
                 }
+                return true
             })
     ]
 }
