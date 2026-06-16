@@ -209,7 +209,7 @@ exports.createPaymentsValidation = () => {
         body('payments.*.paymentAmount')
             .isNumeric()
             .withMessage('paymentAmount should be a number greater than 0')
-            .custom((value, {req}) => {
+            .custom((value, { req }) => {
                 if (value <= 0) {
                     throw new Error('paymentAmount should be more than 0')
                 }
@@ -221,12 +221,13 @@ exports.createPaymentsValidation = () => {
 exports.createExpensesValidation = () => {
     return [
         body('expenses')
-            .isArray({ min: 1, max: 1 })
+            .isArray({ min: 1 })
             .withMessage('expenses field must be a non-empty array'),
         body('expenses.*.expenseDescription')
             .isString()
             .withMessage('expenseDescription field must be a string')
-            .isEmpty()
+            .trim()
+            .notEmpty()
             .withMessage('expenseDescription must not be empty'),
         body('expenses.*.expenseDate')
             .isDate()
@@ -235,9 +236,10 @@ exports.createExpensesValidation = () => {
             .isNumeric()
             .withMessage('expenseAmount should be a number')
             .custom((value, { req }) => {
-                if (value < 0) {
-                    throw new Error('expenseAmount field must be positive')
+                if (value <= 0) {
+                    throw new Error('expenseAmount field must be greater than 0')
                 }
+                return true
             })
     ]
 }

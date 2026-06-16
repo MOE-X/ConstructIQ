@@ -403,7 +403,7 @@ exports.addData = async (req, res, next) => {
                 })
             }
             //checking eligibilioty of the desired date
-    
+
             const { date } = req.body
             const attendanceDate = new Date(date)
             const projectDate = new Date(project.startingDate)
@@ -424,7 +424,7 @@ exports.addData = async (req, res, next) => {
                     }
                 ]
             })
-    
+
             return res.status(200).json({
                 response: {
                     success: true,
@@ -566,40 +566,50 @@ exports.addData = async (req, res, next) => {
     else if (url.includes('expenses')) {
         //Data validation
         const expenses = req.body.expenses
-        const errors = validateCreateExpenses(expenses)
-        if (errors.length !== 0) {
-            return res.status(422).json({
+        //creating the db records using the previously fetched project
+        const createdExpenses = []
+        for (const expense of expenses) {
+            const createdExpense = await project.createExpense(expense);
+            createdExpenses.push(createdExpense);
+        }
+        if (!createdExpenses) {
+            return res.status(500).json({
                 response: {
                     success: false,
-                    error: errors
+                    msg: 'Something went wrong'
                 }
             })
         }
-        //adding the projectId
-        expenses.forEach(expense => {
-            expense.projectId = projectId
+
+        return res.status(201).json({
+            response: {
+                success: true,
+                msg: 'Expenses added successfully',
+                expense: createdExpenses
+            }
         })
-        Expense.bulkCreate(expenses)
-            .then(expenses => {
-                if (!expenses) {
-                    return res.status(500).json({
-                        response: {
-                            success: false,
-                            msg: 'Something went wrong'
-                        }
-                    })
-                }
-                return res.status(201).json({
-                    response: {
-                        success: true,
-                        msg: 'Expenses added successfully',
-                        expense: expenses
-                    }
-                })
-            })
-            .catch(err => {
-                console.error('Error: ', err)
-            })
+
+        // Expense.bulkCreate(expenses)
+        //     .then(expenses => {
+        //         if (!expenses) {
+        //             return res.status(500).json({
+        //                 response: {
+        //                     success: false,
+        //                     msg: 'Something went wrong'
+        //                 }
+        //             })
+        //         }
+        //         return res.status(201).json({
+        //             response: {
+        //                 success: true,
+        //                 msg: 'Expenses added successfully',
+        //                 expense: expenses
+        //             }
+        //         })
+        //     })
+        //     .catch(err => {
+        //         console.error('Error: ', err)
+        //     })
 
     }
 }
