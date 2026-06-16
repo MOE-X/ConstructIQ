@@ -105,3 +105,13 @@ exports.register = (req, res, next) => {
             console.error('Error: ', err)
         })
 }
+
+exports.logout = (req, res, next) => {
+    req.session.isLoggedIn = false
+    return res.status(200).json({
+        response: {
+            success: true,
+            msg: 'Logged out'
+        }
+    })
+}
