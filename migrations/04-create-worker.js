@@ -4,10 +4,10 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('workers', {
       workerId: {
-        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
-        autoIncrement: true,
-        allowNull: false
+        type: Sequelize.UUID,
       },
       fullName: {
         type: Sequelize.STRING,
@@ -26,7 +26,7 @@ module.exports = {
         allowNull: false
       },
       wRoleId: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: 'WRoles',
