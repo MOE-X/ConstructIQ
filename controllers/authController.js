@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const { User } = require('../models/')
 
@@ -17,7 +18,7 @@ exports.login = (req, res, next) => {
     const userName = req.body.userName
     const password = req.body.password
     User.findOne({ where: { userName: userName } })
-        .then(user => {
+        .then(async user => {
             if (!user) {
                 console.log(user)
                 return res.status(422).json({
@@ -27,7 +28,8 @@ exports.login = (req, res, next) => {
                     }
                 })
             }
-            if (user.password !== password) {
+            const isPassword = await bcrypt.compare(password, user.password)
+            if (!isPassword) {
                 console.log(user)
                 return res.status(422).json({
                     response: {
@@ -56,7 +58,7 @@ exports.login = (req, res, next) => {
         })
 }
 
-exports.register = (req, res, next) => {
+exports.register = async (req, res, next) => {
     const { userName, password, confirmPassword } = req.body
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -73,9 +75,10 @@ exports.register = (req, res, next) => {
             }
         })
     }
+    const hashedPass = await bcrypt.hash(password, 12)
     User.create({
         userName: userName,
-        password: password
+        password: hashedPass
     })
         .then(user => {
             if (!user) {
